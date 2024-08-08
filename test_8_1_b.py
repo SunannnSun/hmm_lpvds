@@ -31,6 +31,10 @@ x, x_dot, x_att, x_init = load_tools.load_data(int(input_opt))
 N1 = 420
 N_att = 0
 
+N_per_S = 395
+N_per_E = 420
+# N_per_E = 520
+
 sequence_arr = np.zeros((x.shape[0], ), dtype=int)
 sequence_arr[N1: ] = 1
 
@@ -145,7 +149,7 @@ while np.linalg.norm(x_test[-1] -x_att_2) > 0.1:
     # Step 3: Compute the predicted velocity 
     x_dot_pred_curr = pos_ds[s_curr].predict(x_curr).T
     x_dot_pred.append(x_dot_pred_curr)
-    if i >= 395 and i <=520:
+    if i >= N_per_S and i <=N_per_E:
         x_dot_test_curr = np.array((0, 30)).reshape(1, -1) # adding manual perturbation
         x_dot_test.append(x_dot_test_curr)
     else:
@@ -175,7 +179,7 @@ while np.linalg.norm(x_test[-1] -x_att_2) > 0.1:
 
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(10, 8))
 
 ax.scatter(x[:, 0], x[:, 1], color='k', s=5, alpha=0.4, label='original data')
 
@@ -189,6 +193,9 @@ yy = np.array(x_test)[:, 0, 1]
 
 
 colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime']
+
+sequence_arr_test = np.array(sequence_arr_test)
+sequence_arr_test[N_per_S:N_per_E] = 3
 labels = np.take(colors, np.array(sequence_arr_test))
 
 # Create line segments
@@ -196,7 +203,7 @@ points = np.array([xx, yy]).T.reshape(-1, 1, 2)
 segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
 # Initialize LineCollection
-lc = LineCollection(segments, linewidth=5)
+lc = LineCollection(segments, linewidth=8)
 ax.add_collection(lc)
 
 
@@ -242,9 +249,9 @@ for k in np.arange(len(A)):
 u2 = dx[0,:].reshape((plot_sample,plot_sample))
 v2 = dx[1,:].reshape((plot_sample,plot_sample))
 
-ax.streamplot(x_mesh,y_mesh,u1,v1, density=3.0, color="black", arrowsize=1.1, arrowstyle="->")
-scatter1 = ax.scatter(x_att_1[0, 0], x_att_1[0, 1], s=80, facecolors='none', edgecolors='magenta', linewidths=2)
-scatter2 = ax.scatter(x_att_2[0, 0], x_att_2[0, 1], s=80, facecolors='none', edgecolors='magenta', linewidths=2)
+ax.streamplot(x_mesh,y_mesh,u1,v1, density=2.0, color="black", arrowsize=1.1, arrowstyle="->")
+scatter1 = ax.scatter(x_att_1[0, 0], x_att_1[0, 1], s=150, facecolors='none', edgecolors='magenta', linewidths=4)
+scatter2 = ax.scatter(x_att_2[0, 0], x_att_2[0, 1], s=150, facecolors='none', edgecolors='magenta', linewidths=4)
 scatter2.set_visible(False)
 
 
@@ -259,9 +266,10 @@ def demo_and_streamline_2():
     for art in ax.get_children():
         if isinstance(art, LineCollection) and art is not lc:
             art.remove()    
-    ax.streamplot(x_mesh,y_mesh,u2,v2, density=3.0, color="black", arrowsize=1.1, arrowstyle="->")
+    ax.streamplot(x_mesh,y_mesh,u2,v2, density=2.0, color="black", arrowsize=1.1, arrowstyle="->")
     scatter1.set_visible(False)
     scatter2.set_visible(True)
+    ax.set_title(f"No Perturbation; Subtask 2")
 
 def demo_and_streamline_1():
     for art in ax.get_children():
@@ -271,9 +279,12 @@ def demo_and_streamline_1():
     for art in ax.get_children():
         if isinstance(art, LineCollection) and art is not lc:
             art.remove()    
-    ax.streamplot(x_mesh,y_mesh,u1,v1, density=3.0, color="black", arrowsize=1.1, arrowstyle="->")
+    ax.streamplot(x_mesh,y_mesh,u1,v1, density=2.0, color="black", arrowsize=1.1, arrowstyle="->")
     scatter1.set_visible(True)
     scatter2.set_visible(False)
+    # ax.set_title(f"Frame {frame + 1}")    
+    ax.set_title(f"No Perturbation; Subtask 1")
+    
 
 def init():
     """Initialize the background of the plot."""
@@ -287,6 +298,9 @@ def update(frame):
         demo_and_streamline_2()
     elif sequence_arr_test[frame] != sequence_arr_test[frame-1] and sequence_arr_test[frame] == 0:
         demo_and_streamline_1()
+    elif sequence_arr_test[frame] != sequence_arr_test[frame-1] and sequence_arr_test[frame] == 3:
+        ax.set_title(f"Perturbation begins")
+
 
     # Update segments up to the current frame   
     start = max(0, frame - 10)
@@ -299,6 +313,8 @@ def update(frame):
     # colors = [labels[sequence_arr_test[frame]]] * current_segments.shape[0]
     lc.set_segments(current_segments)
     lc.set_color(colors)
+
+
 
     return lc, 
 
